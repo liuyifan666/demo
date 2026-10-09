@@ -31,7 +31,7 @@ function startThumbTouch(event) {
 function finishThumbTouch(event) {
   const strip = thumbStripRef.value
   const endX = event.changedTouches[0]?.clientX ?? thumbTouchStartX
-  if (!strip || Math.abs(endX - thumbTouchStartX) < 10) {
+  if (!strip || galleryCollapsed.value || Math.abs(endX - thumbTouchStartX) < 10) {
     return
   }
 
@@ -256,6 +256,8 @@ function scrollToTop() {
               :key="image.src"
               class="thumb"
               :class="{ active: activeImageIndex === index }"
+              :tabindex="galleryCollapsed && activeImageIndex !== index ? -1 : 0"
+              :aria-hidden="galleryCollapsed && activeImageIndex !== index"
               type="button"
               @click="selectImage(index)"
             >
