@@ -38,6 +38,8 @@ const recommendations = ref([
     title: '[新西兰黑牌] 牛肚片片',
     price: '¥2533.97/包',
     tag: '易解冻',
+    metaTags: ['特价', '限时折扣', '领¥30.88券运'],
+    showPurchased: true,
     cartQuantity: 1,
   },
   {
@@ -45,6 +47,8 @@ const recommendations = ref([
     title: '[长江桂柳] 大白条鸭',
     price: '¥71.18/斤',
     tag: '易解冻',
+    metaTags: ['满赠'],
+    showPurchased: false,
     cartQuantity: 1,
   },
   {
@@ -52,6 +56,8 @@ const recommendations = ref([
     title: '[九帝] 西装鸡整箱',
     price: '¥14.40/斤',
     tag: '限时折扣',
+    metaTags: ['限时折扣'],
+    showPurchased: false,
     cartQuantity: 1,
   },
 ])
@@ -354,13 +360,14 @@ function scrollToTop() {
                 src="/assets/brand.png"
                 alt="清真"
               />
-              <span class="recommend-tag">{{ item.tag }}</span>
+              <span v-if="item.showPurchased" class="recommend-tag recommend-purchased-tag">买过</span>
+              <span class="recommend-tag recommend-condition-tag">{{ item.tag }}</span>
             </div>
             <h3>{{ item.title }}</h3>
             <div class="recommend-meta">
-              <span class="mini-label">特价</span>
-              <span class="mini-label">限时折扣</span>
-              <span class="mini-label">满赠</span>
+              <span v-for="metaTag in item.metaTags" :key="metaTag" class="mini-label">
+                {{ metaTag }}
+              </span>
             </div>
             <div class="recommend-price">
               <strong>{{ item.price }}</strong>

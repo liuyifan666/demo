@@ -827,12 +827,20 @@ h2 {
 .recommend-tag {
   position: absolute;
   bottom: 7px;
-  left: 7px;
   padding: 4px 6px;
   border-radius: 4px;
   color: #fff;
-  background: #4fa6cf;
   font-size: 10px;
+}
+
+.recommend-purchased-tag {
+  left: 7px;
+  background: #ff9a3d;
+}
+
+.recommend-condition-tag {
+  right: 7px;
+  background: #4fa6cf;
 }
 
 .recommend-item h3 {
@@ -848,13 +856,19 @@ h2 {
 
 .recommend-meta {
   display: flex;
-  gap: 5px;
+  gap: 2px;
   margin-top: 6px;
 }
 
 .mini-label {
+  padding: 3px 5px;
+  border: 1px solid #f4c6c1;
+  border-radius: 4px;
   color: #e28276;
-  font-size: 10px;
+  background: #fff;
+  font-size: 9px;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .recommend-price {
