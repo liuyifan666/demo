@@ -366,14 +366,13 @@ button {
   height: 34px;
   padding: 0;
   overflow: hidden;
-  border: 2px solid rgba(255, 255, 255, 0.65);
+  border: 0;
   border-radius: 7px;
   background: #fff;
 }
 
 .thumb.active {
-  border-color: #e68179;
-  /* box-shadow: 0 0 0 1px rgba(87, 57, 35, 0.7); */
+  border: 0;
 }
 
 .thumb img {
