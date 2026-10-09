@@ -16,39 +16,62 @@ const activeTab = ref('recommend')
 const galleryCollapsed = ref(false)
 const headerPinned = ref(false)
 const thumbStripRef = ref(null)
-const thumbBounce = ref('')
+const thumbDragOffset = ref(0)
+const thumbReleasing = ref(false)
 let thumbTouchStartX = 0
-let thumbBounceTimer
+let thumbTouchStartScrollLeft = 0
+let thumbReleaseTimer
 
 function updateHeaderPinned() {
   headerPinned.value = window.scrollY > 0
 }
 
 function startThumbTouch(event) {
-  thumbTouchStartX = event.touches[0]?.clientX ?? 0
-}
-
-function finishThumbTouch(event) {
   const strip = thumbStripRef.value
-  const endX = event.changedTouches[0]?.clientX ?? thumbTouchStartX
-  if (!strip || galleryCollapsed.value || Math.abs(endX - thumbTouchStartX) < 10) {
+  if (galleryCollapsed.value || !strip) {
     return
   }
 
-  const maxScrollLeft = Math.max(0, strip.scrollWidth - strip.clientWidth)
-  const atStart = strip.scrollLeft <= 1
-  const atEnd = strip.scrollLeft >= maxScrollLeft - 1
+  thumbTouchStartX = event.touches[0]?.clientX ?? 0
+  thumbTouchStartScrollLeft = strip.scrollLeft
+  thumbDragOffset.value = 0
+  thumbReleasing.value = false
+  window.clearTimeout(thumbReleaseTimer)
+}
 
-  if ((endX > thumbTouchStartX && atStart) || (endX < thumbTouchStartX && atEnd)) {
-    thumbBounce.value = ''
-    window.requestAnimationFrame(() => {
-      thumbBounce.value = endX > thumbTouchStartX ? 'bounce-right' : 'bounce-left'
-    })
-    window.clearTimeout(thumbBounceTimer)
-    thumbBounceTimer = window.setTimeout(() => {
-      thumbBounce.value = ''
-    }, 420)
+function moveThumbTouch(event) {
+  const strip = thumbStripRef.value
+  const currentX = event.touches[0]?.clientX
+  if (galleryCollapsed.value || !strip || currentX === undefined) {
+    return
   }
+
+  const deltaX = currentX - thumbTouchStartX
+  const maxScrollLeft = Math.max(0, strip.scrollWidth - strip.clientWidth)
+  const proposedScrollLeft = thumbTouchStartScrollLeft - deltaX
+
+  if (proposedScrollLeft < 0) {
+    thumbDragOffset.value = Math.min(48, -proposedScrollLeft * 0.38)
+  } else if (proposedScrollLeft > maxScrollLeft) {
+    thumbDragOffset.value = -Math.min(48, (proposedScrollLeft - maxScrollLeft) * 0.38)
+  } else {
+    thumbDragOffset.value = 0
+  }
+}
+
+function finishThumbTouch() {
+  if (thumbDragOffset.value === 0) {
+    return
+  }
+
+  thumbReleasing.value = true
+  window.requestAnimationFrame(() => {
+    thumbDragOffset.value = 0
+  })
+  window.clearTimeout(thumbReleaseTimer)
+  thumbReleaseTimer = window.setTimeout(() => {
+    thumbReleasing.value = false
+  }, 280)
 }
 
 onMounted(() => {
@@ -58,7 +81,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('scroll', updateHeaderPinned)
-  window.clearTimeout(thumbBounceTimer)
+  window.clearTimeout(thumbReleaseTimer)
 })
 
 const prices = ref([
@@ -247,9 +270,12 @@ function scrollToTop() {
           <div
             ref="thumbStripRef"
             class="thumb-strip"
-            :class="thumbBounce"
+            :class="{ 'is-releasing': thumbReleasing }"
+            :style="{ transform: `translateX(${thumbDragOffset}px)` }"
             @touchstart="startThumbTouch"
+            @touchmove="moveThumbTouch"
             @touchend="finishThumbTouch"
+            @touchcancel="finishThumbTouch"
           >
             <button
               v-for="(image, index) in gallery"
