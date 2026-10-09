@@ -46,6 +46,10 @@ function dragDirection(deltaX, deltaY) {
   return null
 }
 
+function heroSwipeThreshold(width) {
+  return Math.max(20, Math.min(24, width * 0.06))
+}
+
 function createHeroGesture(element, pointerId, clientX, clientY, input) {
   return {
     input,
@@ -170,7 +174,7 @@ function finishHeroDrag(event) {
 
   if (gesture.dragging && event?.type === 'pointerup') {
     const distance = event.clientX - gesture.startX
-    if (Math.abs(distance) >= Math.min(80, gesture.width * 0.2)) {
+    if (Math.abs(distance) >= heroSwipeThreshold(gesture.width)) {
       const index = Math.max(0, Math.min(gallery.length - 1,
         gesture.index + (distance < 0 ? 1 : -1)))
       if (index !== gesture.index) {
@@ -193,7 +197,7 @@ function finishHeroTouch(event) {
 
   const distance = touch.clientX - gesture.startX
   const shouldChange = event.type === 'touchend' && gesture.dragging &&
-    Math.abs(distance) >= Math.min(80, gesture.width * 0.2)
+    Math.abs(distance) >= heroSwipeThreshold(gesture.width)
   finishHeroDrag()
 
   if (shouldChange) {
