@@ -315,6 +315,7 @@ button {
   overflow-y: hidden;
   padding: 6px 4px 6px 6px;
   opacity: 1;
+  overscroll-behavior-x: contain;
   scrollbar-width: none;
   touch-action: pan-x;
   transition:
@@ -326,6 +327,36 @@ button {
 
 .thumb-strip::-webkit-scrollbar {
   display: none;
+}
+
+.thumb-strip.bounce-left {
+  animation: thumb-bounce-left 420ms ease-out;
+}
+
+.thumb-strip.bounce-right {
+  animation: thumb-bounce-right 420ms ease-out;
+}
+
+@keyframes thumb-bounce-left {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  45% {
+    transform: translateX(-10px);
+  }
+}
+
+@keyframes thumb-bounce-right {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  45% {
+    transform: translateX(10px);
+  }
 }
 
 .thumb {

@@ -15,9 +15,40 @@ const activeImageIndex = ref(0)
 const activeTab = ref('recommend')
 const galleryCollapsed = ref(false)
 const headerPinned = ref(false)
+const thumbStripRef = ref(null)
+const thumbBounce = ref('')
+let thumbTouchStartX = 0
+let thumbBounceTimer
 
 function updateHeaderPinned() {
   headerPinned.value = window.scrollY > 0
+}
+
+function startThumbTouch(event) {
+  thumbTouchStartX = event.touches[0]?.clientX ?? 0
+}
+
+function finishThumbTouch(event) {
+  const strip = thumbStripRef.value
+  const endX = event.changedTouches[0]?.clientX ?? thumbTouchStartX
+  if (!strip || Math.abs(endX - thumbTouchStartX) < 10) {
+    return
+  }
+
+  const maxScrollLeft = Math.max(0, strip.scrollWidth - strip.clientWidth)
+  const atStart = strip.scrollLeft <= 1
+  const atEnd = strip.scrollLeft >= maxScrollLeft - 1
+
+  if ((endX > thumbTouchStartX && atStart) || (endX < thumbTouchStartX && atEnd)) {
+    thumbBounce.value = ''
+    window.requestAnimationFrame(() => {
+      thumbBounce.value = endX > thumbTouchStartX ? 'bounce-right' : 'bounce-left'
+    })
+    window.clearTimeout(thumbBounceTimer)
+    thumbBounceTimer = window.setTimeout(() => {
+      thumbBounce.value = ''
+    }, 420)
+  }
 }
 
 onMounted(() => {
@@ -27,6 +58,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('scroll', updateHeaderPinned)
+  window.clearTimeout(thumbBounceTimer)
 })
 
 const prices = ref([
@@ -212,7 +244,13 @@ function scrollToTop() {
         </div>
         <div class="gallery-controls" :class="{ 'is-collapsed': galleryCollapsed }">
           <div class="image-index">{{ activeImageIndex + 1 }} / {{ gallery.length }}</div>
-          <div class="thumb-strip">
+          <div
+            ref="thumbStripRef"
+            class="thumb-strip"
+            :class="thumbBounce"
+            @touchstart="startThumbTouch"
+            @touchend="finishThumbTouch"
+          >
             <button
               v-for="(image, index) in gallery"
               :key="image.src"
