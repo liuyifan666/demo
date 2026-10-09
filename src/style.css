@@ -133,7 +133,7 @@ button {
 .media-more-button.el-button:focus {
   color: #fff;
   border: 0;
-  background: rgba(112, 112, 112, 0.78);
+  /* background: rgba(112, 112, 112, 0.78); */
 }
 
 .media-function-icon {
