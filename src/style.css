@@ -357,7 +357,7 @@ button {
   user-select: none;
   will-change: transform;
   transition:
-    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 800ms cubic-bezier(0.22, 1, 0.36, 1),
     gap 280ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 

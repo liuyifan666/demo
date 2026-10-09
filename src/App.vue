@@ -15,6 +15,7 @@ const activeImageIndex = ref(0)
 const activeTab = ref('recommend')
 const galleryCollapsed = ref(false)
 const headerPinned = ref(false)
+const heroMediaRef = ref(null)
 const thumbStripRef = ref(null)
 const thumbTrackRef = ref(null)
 const thumbDragOffset = ref(0)
@@ -23,7 +24,8 @@ let thumbGesture = null
 let suppressThumbClick = false
 
 function updateHeaderPinned() {
-  headerPinned.value = window.scrollY > 0
+  const heroMedia = heroMediaRef.value
+  headerPinned.value = Boolean(heroMedia && heroMedia.getBoundingClientRect().bottom <= 0)
 }
 
 function startThumbDrag(event) {
@@ -115,10 +117,12 @@ function guardThumbClick(event) {
 onMounted(() => {
   updateHeaderPinned()
   window.addEventListener('scroll', updateHeaderPinned, { passive: true })
+  window.addEventListener('resize', updateHeaderPinned, { passive: true })
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', updateHeaderPinned)
+  window.removeEventListener('resize', updateHeaderPinned)
   finishThumbDrag()
 })
 
@@ -288,7 +292,7 @@ function scrollToTop() {
           </div>
         </div>
       </header>
-      <section class="hero-media">
+      <section ref="heroMediaRef" class="hero-media">
         <div
           class="hero-image-track"
           :style="{ transform: `translateX(-${activeImageIndex * 100}%)` }"
