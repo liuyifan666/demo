@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 
 const asset = path => `${import.meta.env.BASE_URL}${path}`
@@ -16,16 +16,95 @@ const activeTab = ref('recommend')
 const galleryCollapsed = ref(false)
 const headerPinned = ref(false)
 const heroMediaRef = ref(null)
+const heroDragOffset = ref(0)
+const heroDragging = ref(false)
 const thumbStripRef = ref(null)
 const thumbTrackRef = ref(null)
 const thumbDragOffset = ref(0)
 const thumbDragging = ref(false)
 let thumbGesture = null
 let suppressThumbClick = false
+let heroGesture = null
 
 function updateHeaderPinned() {
   const heroMedia = heroMediaRef.value
   headerPinned.value = Boolean(heroMedia && heroMedia.getBoundingClientRect().bottom <= 0)
+}
+
+function startHeroDrag(event) {
+  if (!event.isPrimary || event.button !== 0 || heroGesture) {
+    return
+  }
+
+  heroGesture = {
+    pointerId: event.pointerId,
+    element: event.currentTarget,
+    startX: event.clientX,
+    startY: event.clientY,
+    width: event.currentTarget.clientWidth,
+    index: activeImageIndex.value,
+    dragging: false,
+  }
+}
+
+function moveHeroDrag(event) {
+  const gesture = heroGesture
+  if (!gesture || gesture.pointerId !== event.pointerId) {
+    return
+  }
+
+  const deltaX = event.clientX - gesture.startX
+  const deltaY = event.clientY - gesture.startY
+  if (!gesture.dragging) {
+    if (Math.max(Math.abs(deltaX), Math.abs(deltaY)) < 6) {
+      return
+    }
+    if (Math.abs(deltaY) > Math.abs(deltaX)) {
+      heroGesture = null
+      return
+    }
+    gesture.dragging = true
+    heroDragging.value = true
+    gesture.element.setPointerCapture(event.pointerId)
+  }
+
+  if (event.cancelable) {
+    event.preventDefault()
+  }
+
+  const atEdge = (gesture.index === 0 && deltaX > 0) ||
+    (gesture.index === gallery.length - 1 && deltaX < 0)
+  heroDragOffset.value = atEdge
+    ? deltaX * 0.25
+    : Math.max(-gesture.width, Math.min(gesture.width, deltaX))
+}
+
+function finishHeroDrag(event) {
+  const gesture = heroGesture
+  if (!gesture || (event && gesture.pointerId !== event.pointerId)) {
+    return
+  }
+  if (event?.type === 'lostpointercapture' && event.target !== gesture.element) {
+    return
+  }
+
+  heroGesture = null
+  heroDragging.value = false
+  heroDragOffset.value = 0
+  if (gesture.element.hasPointerCapture(gesture.pointerId)) {
+    gesture.element.releasePointerCapture(gesture.pointerId)
+  }
+
+  if (gesture.dragging && event?.type === 'pointerup') {
+    const distance = event.clientX - gesture.startX
+    if (Math.abs(distance) >= Math.min(80, gesture.width * 0.2)) {
+      const index = Math.max(0, Math.min(gallery.length - 1,
+        gesture.index + (distance < 0 ? 1 : -1)))
+      if (index !== gesture.index) {
+        selectImage(index)
+      }
+    }
+  }
 }
 
 function startThumbDrag(event) {
@@ -124,6 +203,7 @@ onUnmounted(() => {
   window.removeEventListener('scroll', updateHeaderPinned)
   window.removeEventListener('resize', updateHeaderPinned)
   finishThumbDrag()
+  finishHeroDrag()
 })
 
 const prices = ref([
@@ -230,9 +310,29 @@ const faqs = [
 
 const cartCount = ref(1)
 
-function selectImage(index) {
+async function selectImage(index) {
+  finishHeroDrag()
   isFlag.value = !index
   activeImageIndex.value = index
+  await nextTick()
+
+  const strip = thumbStripRef.value
+  const thumbnail = thumbTrackRef.value?.children[index]
+  if (!strip || !thumbnail || galleryCollapsed.value) {
+    return
+  }
+
+  const viewport = strip.getBoundingClientRect()
+  const image = thumbnail.getBoundingClientRect()
+  const padding = window.getComputedStyle(strip)
+  const left = viewport.left + parseFloat(padding.paddingLeft)
+  const right = viewport.right - parseFloat(padding.paddingRight)
+  if (image.left < left || image.right > right) {
+    strip.scrollTo({
+      left: strip.scrollLeft + (image.left < left ? image.left - left : image.right - right),
+      behavior: 'smooth',
+    })
+  }
 }
 
 function toggleGallery() {
@@ -294,16 +394,28 @@ function scrollToTop() {
       </header>
       <section ref="heroMediaRef" class="hero-media">
         <div
-          class="hero-image-track"
-          :style="{ transform: `translateX(-${activeImageIndex * 100}%)` }"
+          class="hero-image-viewport"
+          :class="{ 'is-dragging': heroDragging }"
+          @pointerdown="startHeroDrag"
+          @pointermove="moveHeroDrag"
+          @pointerup="finishHeroDrag"
+          @pointercancel="finishHeroDrag"
+          @lostpointercapture="finishHeroDrag"
         >
-          <img
-            v-for="image in gallery"
-            :key="image.src"
-            class="hero-image"
-            :src="image.src"
-            :alt="image.label"
-          />
+          <div
+            class="hero-image-track"
+            :class="{ 'is-dragging': heroDragging }"
+            :style="{ transform: `translateX(calc(-${activeImageIndex * 100}% + ${heroDragOffset}px))` }"
+          >
+            <img
+              v-for="image in gallery"
+              :key="image.src"
+              class="hero-image"
+              :src="image.src"
+              :alt="image.label"
+              draggable="false"
+            />
+          </div>
         </div>
         <div class="play-button" v-show="isFlag">
           <img class="main-play-icon" :src="asset('assets/icons/play.svg')" alt="" aria-hidden="true" />

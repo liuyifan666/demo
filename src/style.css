@@ -59,12 +59,29 @@ button {
   background: #dadada;
 }
 
+.hero-image-viewport {
+  position: absolute;
+  inset: 0;
+  touch-action: pan-y pinch-zoom;
+  user-select: none;
+  cursor: grab;
+}
+
 .hero-image-track {
   position: absolute;
   inset: 0;
   display: flex;
+  pointer-events: none;
   transition: transform 0.4s ease-in-out;
   will-change: transform;
+}
+
+.hero-image-viewport.is-dragging {
+  cursor: grabbing;
+}
+
+.hero-image-track.is-dragging {
+  transition: none;
 }
 
 .hero-image {
@@ -73,6 +90,7 @@ button {
   height: 100%;
   display: block;
   object-fit: cover;
+  pointer-events: none;
 }
 
 .page-header {
@@ -251,6 +269,7 @@ button {
 
 .play-button {
   position: absolute;
+  pointer-events: none;
   top: 50%;
   left: 50%;
   display: grid;
