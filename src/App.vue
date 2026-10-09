@@ -14,7 +14,6 @@ const isFlag = ref(true)
 const activeImageIndex = ref(0)
 const activeTab = ref('recommend')
 const galleryCollapsed = ref(false)
-const mainImage = computed(() => gallery[activeImageIndex.value].src)
 
 const prices = ref([
   {
@@ -158,7 +157,18 @@ function scrollToTop() {
   <div class="app-stage">
     <main class="phone-page">
       <section class="hero-media">
-        <img class="hero-image" :src="mainImage" :alt="gallery[activeImageIndex].label" />
+        <div
+          class="hero-image-track"
+          :style="{ transform: `translateX(-${activeImageIndex * 100}%)` }"
+        >
+          <img
+            v-for="image in gallery"
+            :key="image.src"
+            class="hero-image"
+            :src="image.src"
+            :alt="image.label"
+          />
+        </div>
         <img class="status-bar-image" :src="asset('assets/figma-17.png')" alt="" aria-hidden="true" />
         <div class="media-tools">
           <div class="media-nav-pill">
