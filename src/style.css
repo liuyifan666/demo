@@ -941,7 +941,9 @@ h2 {
   overflow: hidden;
   padding: 0 18px 19px;
   border-radius: 8px;
-  background: url("/assets/bg.png") center top / 100% auto no-repeat;
+  background-position: center top;
+  background-size: 100% auto;
+  background-repeat: no-repeat;
 }
 
 /* .poster-pills {

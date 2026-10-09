@@ -2,11 +2,13 @@
 import { computed, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 
+const asset = path => `${import.meta.env.BASE_URL}${path}`
+
 const gallery = [
-  { src: '/assets/figma-16.png', label: '主图' },
-  { src: '/assets/figma-01.png', label: '包装' },
-  { src: '/assets/figma-04.png', label: '包装侧面' },
-  { src: '/assets/figma-06.png', label: '食材' },
+  { src: asset('assets/figma-16.png'), label: '主图' },
+  { src: asset('assets/figma-01.png'), label: '包装' },
+  { src: asset('assets/figma-04.png'), label: '包装侧面' },
+  { src: asset('assets/figma-06.png'), label: '食材' },
 ]
 const isFlag = ref(true)
 const activeImageIndex = ref(0)
@@ -34,7 +36,7 @@ const prices = ref([
 
 const recommendations = ref([
   {
-    image: '/assets/figma-09.png',
+    image: asset('assets/figma-09.png'),
     title: '[新西兰黑牌] 牛肚片片',
     price: '¥2533.97/包',
     tag: '易解冻',
@@ -43,7 +45,7 @@ const recommendations = ref([
     cartQuantity: 1,
   },
   {
-    image: '/assets/figma-06.png',
+    image: asset('assets/figma-06.png'),
     title: '[长江桂柳] 大白条鸭',
     price: '¥71.18/斤',
     tag: '易解冻',
@@ -52,7 +54,7 @@ const recommendations = ref([
     cartQuantity: 1,
   },
   {
-    image: '/assets/figma-01.png',
+    image: asset('assets/figma-01.png'),
     title: '[九帝] 西装鸡整箱',
     price: '¥14.40/斤',
     tag: '限时折扣',
@@ -157,30 +159,30 @@ function scrollToTop() {
     <main class="phone-page">
       <section class="hero-media">
         <img class="hero-image" :src="mainImage" :alt="gallery[activeImageIndex].label" />
-        <img class="status-bar-image" src="/assets/figma-17.png" alt="" aria-hidden="true" />
+        <img class="status-bar-image" :src="asset('assets/figma-17.png')" alt="" aria-hidden="true" />
         <div class="media-tools">
           <div class="media-nav-pill">
             <el-button class="media-nav-button" aria-label="返回" title="返回">
-              <img class="media-arrow-icon" src="/assets/icons/left.svg" alt="" aria-hidden="true" />
+              <img class="media-arrow-icon" :src="asset('assets/icons/left.svg')" alt="" aria-hidden="true" />
             </el-button>
             <span class="media-nav-divider" aria-hidden="true"></span>
             <el-button class="media-nav-button" aria-label="分享" title="分享">
-              <img class="media-share-icon" src="/assets/icons/share.svg" alt="" aria-hidden="true" />
+              <img class="media-share-icon" :src="asset('assets/icons/share.svg')" alt="" aria-hidden="true" />
             </el-button>
           </div>
           <div class="media-spacer"></div>
           <div class="media-options-pill">
             <el-button circle class="media-more-button" aria-label="功能" title="更多">
-              <img class="media-function-icon" src="/assets/icons/function.svg" alt="" aria-hidden="true" />
+              <img class="media-function-icon" :src="asset('assets/icons/function.svg')" alt="" aria-hidden="true" />
             </el-button>
             <span class="media-options-divider" aria-hidden="true"></span>
             <button class="lens-button" type="button" aria-label="关闭" title="查看状态">
-              <img class="lens-icon" src="/assets/icons/close.svg" alt="" aria-hidden="true" />
+              <img class="lens-icon" :src="asset('assets/icons/close.svg')" alt="" aria-hidden="true" />
             </button>
           </div>
         </div>
         <div class="play-button" v-show="isFlag">
-          <img class="main-play-icon" src="/assets/icons/play.svg" alt="" aria-hidden="true" />
+          <img class="main-play-icon" :src="asset('assets/icons/play.svg')" alt="" aria-hidden="true" />
         </div>
         <div class="gallery-controls" :class="{ 'is-collapsed': galleryCollapsed }">
           <div class="image-index">{{ activeImageIndex + 1 }} / {{ gallery.length }}</div>
@@ -195,7 +197,7 @@ function scrollToTop() {
             >
               <img :src="image.src" :alt="image.label" />
               <span v-if="index === 0" class="thumb-play" aria-hidden="true">
-                <img class="thumb-play-icon" src="/assets/icons/play2.svg" alt="" />
+                <img class="thumb-play-icon" :src="asset('assets/icons/play2.svg')" alt="" />
               </span>
             </button>
           </div>
@@ -209,7 +211,7 @@ function scrollToTop() {
             <img
               class="gallery-arrow-icon"
               :class="{ rotated: galleryCollapsed }"
-              src="/assets/icons/left.svg"
+              :src="asset('assets/icons/left.svg')"
               alt=""
               aria-hidden="true"
             />
@@ -234,7 +236,7 @@ function scrollToTop() {
         <div class="stats-grid">
           <div class="stat-cell">
             <strong>质检报告</strong>
-            <span>查看 <img class="content-arrow-icon" src="/assets/icons/right.svg" alt="" aria-hidden="true" /></span>
+            <span>查看 <img class="content-arrow-icon" :src="asset('assets/icons/right.svg')" alt="" aria-hidden="true" /></span>
           </div>
           <div class="stat-cell">
             <strong>中国</strong>
@@ -268,7 +270,7 @@ function scrollToTop() {
           <div class="row-main">
             <strong>非质量问题不支持无理由退换货</strong>
           </div>
-          <img class="content-arrow-icon row-arrow-icon" src="/assets/icons/right.svg" alt="" aria-hidden="true" />
+          <img class="content-arrow-icon row-arrow-icon" :src="asset('assets/icons/right.svg')" alt="" aria-hidden="true" />
         </div>
         <div class="info-row activity-row">
           <span class="row-label">活动</span>
@@ -277,7 +279,7 @@ function scrollToTop() {
               <span class="coupon">满28.88减2.88</span>
               <span class="coupon">满88.88减8.88</span>
               <span class="coupon">满288.88减</span>
-              <img class="content-arrow-icon activity-arrow-icon" src="/assets/icons/right.svg" alt="" aria-hidden="true" />
+              <img class="content-arrow-icon activity-arrow-icon" :src="asset('assets/icons/right.svg')" alt="" aria-hidden="true" />
             </div>
             <div class="activity-text">
               <span class="coupon coupon-strong">满赠</span>
@@ -301,7 +303,7 @@ function scrollToTop() {
                 aria-label="减少数量"
                 @click="updateCount(index, -1)"
               >
-                <img src="/assets/reduce.png" alt="" aria-hidden="true" />
+                <img :src="asset('assets/reduce.png')" alt="" aria-hidden="true" />
               </button>
               <span>{{ item.count }}</span>
               <button
@@ -309,7 +311,7 @@ function scrollToTop() {
                 aria-label="增加数量"
                 @click="updateCount(index, 1)"
               >
-                <img src="/assets/add.png" alt="" aria-hidden="true" />
+                <img :src="asset('assets/add.png')" alt="" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -327,7 +329,7 @@ function scrollToTop() {
       <section class="ranking-bar content-card">
         <span class="ranking-mark">榜</span>
         <strong>晓餐推荐卤味鸭货--鸭腿 第<span>3</span>名</strong>
-        <img class="content-arrow-icon ranking-arrow-icon" src="/assets/icons/right.svg" alt="" aria-hidden="true" />
+        <img class="content-arrow-icon ranking-arrow-icon" :src="asset('assets/icons/right.svg')" alt="" aria-hidden="true" />
       </section>
 
       <section class="content-card recommend-card">
@@ -357,7 +359,7 @@ function scrollToTop() {
               <img
                 v-if="item.title.includes('牛肚')"
                 class="recommend-brand-mark"
-                src="/assets/brand.png"
+                :src="asset('assets/brand.png')"
                 alt="清真"
               />
               <span v-if="item.showPurchased" class="recommend-tag recommend-purchased-tag">买过</span>
@@ -378,7 +380,7 @@ function scrollToTop() {
                 class="mini-cart-badge"
               >
                 <el-button circle class="mini-cart" aria-label="加入购物车" @click="addToCart(item)">
-                  <img src="/assets/icons/shopCart2.svg" alt="" aria-hidden="true" />
+                  <img :src="asset('assets/icons/shopCart2.svg')" alt="" aria-hidden="true" />
                 </el-button>
               </el-badge>
             </div>
@@ -388,7 +390,7 @@ function scrollToTop() {
 
       <section class="content-card detail-card">
         <h2>商品详情</h2>
-        <div class="detail-poster">
+        <div class="detail-poster" :style="{ backgroundImage: `url(${asset('assets/bg.png')})` }">
           <!-- <div class="poster-pills">
             <span><b>海产</b><small>当日采购</small></span>
             <span><b>猪肉</b><small>集团专供</small></span>
@@ -422,23 +424,23 @@ function scrollToTop() {
     </main>
 
     <button class="back-to-top" type="button" aria-label="回到顶部" @click="scrollToTop">
-      <img src="/assets/icons/top.svg" alt="" aria-hidden="true" />
+      <img :src="asset('assets/icons/top.svg')" alt="" aria-hidden="true" />
       <span>顶部</span>
     </button>
 
     <footer class="bottom-action">
       <div class="bottom-nav">
         <button class="bottom-nav-item" type="button" aria-label="客服">
-          <img src="/assets/icons/service.svg" alt="" aria-hidden="true" />
+          <img :src="asset('assets/icons/service.svg')" alt="" aria-hidden="true" />
           <span>客服</span>
         </button>
         <button class="bottom-nav-item" type="button" aria-label="收藏">
-          <img src="/assets/icons/collection.svg" alt="" aria-hidden="true" />
+          <img :src="asset('assets/icons/collection.svg')" alt="" aria-hidden="true" />
           <span>收藏</span>
         </button>
         <button class="bottom-nav-item" type="button" aria-label="购物车">
           <el-badge :value="cartCount" :hidden="cartCount === 0" type="danger">
-            <img src="/assets/icons/shopCart.svg" alt="" aria-hidden="true" />
+            <img :src="asset('assets/icons/shopCart.svg')" alt="" aria-hidden="true" />
           </el-badge>
           <span>购物车</span>
         </button>
