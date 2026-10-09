@@ -90,6 +90,11 @@ function finishThumbDrag(event) {
     return
   }
 
+  // A child can lose its implicit capture when the strip takes over dragging.
+  if (event?.type === 'lostpointercapture' && event.target !== gesture.element) {
+    return
+  }
+
   thumbGesture = null
   suppressThumbClick = gesture.dragging
   thumbDragging.value = false
