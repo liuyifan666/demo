@@ -8,7 +8,7 @@ const gallery = [
   { src: asset('assets/figma-16.png'), label: '主图' },
   { src: asset('assets/figma-01.png'), label: '包装' },
   { src: asset('assets/figma-04.png'), label: '包装侧面' },
-  { src: asset('assets/figma-06.png'), label: '食材' },
+  { src: asset('assets/figma-11.png'), label: '食材' },
 ]
 const isFlag = ref(true)
 const activeImageIndex = ref(0)
@@ -214,7 +214,7 @@ function scrollToTop() {
           <div class="image-index">{{ activeImageIndex + 1 }} / {{ gallery.length }}</div>
           <div class="thumb-strip">
             <button
-              v-for="(image, index) in gallery.slice(0, 3)"
+              v-for="(image, index) in gallery"
               :key="image.src"
               class="thumb"
               :class="{ active: activeImageIndex === index }"

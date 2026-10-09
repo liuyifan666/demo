@@ -63,7 +63,7 @@ button {
   position: absolute;
   inset: 0;
   display: flex;
-  transition: transform 2s ease-in-out;
+  transition: transform 0.4s ease-in-out;
   will-change: transform;
 }
 
@@ -311,9 +311,12 @@ button {
   align-items: center;
   gap: 6px;
   height: 48px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   padding: 6px 4px 6px 6px;
   opacity: 1;
+  scrollbar-width: none;
+  touch-action: pan-x;
   transition:
     max-width 280ms cubic-bezier(0.22, 1, 0.36, 1),
     padding 280ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -321,8 +324,13 @@ button {
     opacity 180ms ease;
 }
 
+.thumb-strip::-webkit-scrollbar {
+  display: none;
+}
+
 .thumb {
   position: relative;
+  flex: 0 0 34px;
   width: 34px;
   height: 34px;
   padding: 0;
