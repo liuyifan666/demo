@@ -31,41 +31,48 @@ function updateHeaderPinned() {
   headerPinned.value = Boolean(heroMedia && heroMedia.getBoundingClientRect().bottom <= 0)
 }
 
-function startHeroDrag(event) {
-  if (!event.isPrimary || event.button !== 0 || heroGesture) {
-    return
+function dragDirection(deltaX, deltaY) {
+  const x = Math.abs(deltaX)
+  const y = Math.abs(deltaY)
+  if (Math.max(x, y) < 8) {
+    return null
   }
+  if (x > y * 1.2) {
+    return 'horizontal'
+  }
+  if (y > x * 1.2) {
+    return 'vertical'
+  }
+  return null
+}
 
-  heroGesture = {
-    pointerId: event.pointerId,
-    element: event.currentTarget,
-    startX: event.clientX,
-    startY: event.clientY,
-    width: event.currentTarget.clientWidth,
+function createHeroGesture(element, pointerId, clientX, clientY, input) {
+  return {
+    input,
+    pointerId,
+    element,
+    startX: clientX,
+    startY: clientY,
+    width: element.clientWidth,
     index: activeImageIndex.value,
     dragging: false,
   }
 }
 
-function moveHeroDrag(event) {
-  const gesture = heroGesture
-  if (!gesture || gesture.pointerId !== event.pointerId) {
-    return
-  }
-
-  const deltaX = event.clientX - gesture.startX
-  const deltaY = event.clientY - gesture.startY
+function updateHeroGesture(gesture, clientX, clientY, event) {
+  const deltaX = clientX - gesture.startX
+  const deltaY = clientY - gesture.startY
   if (!gesture.dragging) {
-    if (Math.max(Math.abs(deltaX), Math.abs(deltaY)) < 6) {
+    const direction = dragDirection(deltaX, deltaY)
+    if (!direction) {
       return
     }
-    if (Math.abs(deltaY) > Math.abs(deltaX)) {
-      heroGesture = null
+    if (direction === 'vertical') {
+      finishHeroDrag()
       return
     }
     gesture.dragging = true
     heroDragging.value = true
-    gesture.element.setPointerCapture(event.pointerId)
   }
 
   if (event.cancelable) {
@@ -79,9 +86,75 @@ function moveHeroDrag(event) {
     : Math.max(-gesture.width, Math.min(gesture.width, deltaX))
 }
 
+function startHeroDrag(event) {
+  if (event.pointerType === 'touch' || !event.isPrimary || event.button !== 0 || heroGesture) {
+    return
+  }
+
+  heroGesture = createHeroGesture(
+    event.currentTarget,
+    event.pointerId,
+    event.clientX,
+    event.clientY,
+    'pointer',
+  )
+  event.currentTarget.setPointerCapture(event.pointerId)
+}
+
+function moveHeroDrag(event) {
+  const gesture = heroGesture
+  if (!gesture || gesture.input !== 'pointer' || gesture.pointerId !== event.pointerId) {
+    return
+  }
+
+  updateHeroGesture(gesture, event.clientX, event.clientY, event)
+}
+
+function startHeroTouch(event) {
+  if (event.touches.length !== 1) {
+    finishHeroDrag()
+    return
+  }
+  if (heroGesture) {
+    return
+  }
+
+  const touch = event.changedTouches[0]
+  if (!touch) {
+    return
+  }
+
+  heroGesture = createHeroGesture(
+    event.currentTarget,
+    touch.identifier,
+    touch.clientX,
+    touch.clientY,
+    'touch',
+  )
+}
+
+function moveHeroTouch(event) {
+  const gesture = heroGesture
+  if (!gesture || gesture.input !== 'touch') {
+    return
+  }
+  if (event.touches.length !== 1) {
+    finishHeroDrag()
+    return
+  }
+
+  const touch = Array.from(event.touches).find(item => item.identifier === gesture.pointerId)
+  if (!touch) {
+    return
+  }
+
+  updateHeroGesture(gesture, touch.clientX, touch.clientY, event)
+}
+
 function finishHeroDrag(event) {
   const gesture = heroGesture
-  if (!gesture || (event && gesture.pointerId !== event.pointerId)) {
+  if (!gesture || (event && (gesture.input !== 'pointer' ||
+    event.pointerType === 'touch' || gesture.pointerId !== event.pointerId))) {
     return
   }
   if (event?.type === 'lostpointercapture' && event.target !== gesture.element) {
@@ -91,7 +164,7 @@ function finishHeroDrag(event) {
   heroGesture = null
   heroDragging.value = false
   heroDragOffset.value = 0
-  if (gesture.element.hasPointerCapture(gesture.pointerId)) {
+  if (gesture.input === 'pointer' && gesture.element.hasPointerCapture(gesture.pointerId)) {
     gesture.element.releasePointerCapture(gesture.pointerId)
   }
 
@@ -107,13 +180,34 @@ function finishHeroDrag(event) {
   }
 }
 
-function startThumbDrag(event) {
-  const strip = thumbStripRef.value
-  const track = thumbTrackRef.value
-  if (!event.isPrimary || event.button !== 0 || thumbGesture) {
+function finishHeroTouch(event) {
+  const gesture = heroGesture
+  if (!gesture || gesture.input !== 'touch') {
     return
   }
 
+  const touch = Array.from(event.changedTouches).find(item => item.identifier === gesture.pointerId)
+  if (!touch) {
+    return
+  }
+
+  const distance = touch.clientX - gesture.startX
+  const shouldChange = event.type === 'touchend' && gesture.dragging &&
+    Math.abs(distance) >= Math.min(80, gesture.width * 0.2)
+  finishHeroDrag()
+
+  if (shouldChange) {
+    const index = Math.max(0, Math.min(gallery.length - 1,
+      gesture.index + (distance < 0 ? 1 : -1)))
+    if (index !== gesture.index) {
+      selectImage(index)
+    }
+  }
+}
+
+function createThumbGesture(element, pointerId, clientX, clientY, input) {
+  const strip = thumbStripRef.value
+  const track = thumbTrackRef.value
   suppressThumbClick = false
   if (galleryCollapsed.value || !strip || !track) {
     return
@@ -122,35 +216,50 @@ function startThumbDrag(event) {
   const style = window.getComputedStyle(strip)
   const padding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)
   thumbGesture = {
-    pointerId: event.pointerId,
-    element: strip,
-    startX: event.clientX,
-    startY: event.clientY,
+    input,
+    pointerId,
+    element,
+    startX: clientX,
+    startY: clientY,
     scrollLeft: strip.scrollLeft,
     maxScrollLeft: Math.max(0, track.offsetWidth + padding - strip.clientWidth),
     dragging: false,
   }
 }
 
+function startThumbDrag(event) {
+  if (event.pointerType === 'touch' || !event.isPrimary || event.button !== 0 || thumbGesture) {
+    return
+  }
+  createThumbGesture(event.currentTarget, event.pointerId, event.clientX, event.clientY, 'pointer')
+}
+
 function moveThumbDrag(event) {
   const gesture = thumbGesture
-  if (!gesture || gesture.pointerId !== event.pointerId) {
+  if (!gesture || gesture.input !== 'pointer' || gesture.pointerId !== event.pointerId) {
     return
   }
 
-  const deltaX = event.clientX - gesture.startX
-  const deltaY = event.clientY - gesture.startY
+  updateThumbGesture(gesture, event.clientX, event.clientY, event)
+}
+
+function updateThumbGesture(gesture, clientX, clientY, event) {
+  const deltaX = clientX - gesture.startX
+  const deltaY = clientY - gesture.startY
   if (!gesture.dragging) {
-    if (Math.max(Math.abs(deltaX), Math.abs(deltaY)) < 6) {
+    const direction = dragDirection(deltaX, deltaY)
+    if (!direction) {
       return
     }
-    if (Math.abs(deltaY) > Math.abs(deltaX)) {
-      thumbGesture = null
+    if (direction === 'vertical') {
+      finishThumbDrag()
       return
     }
     gesture.dragging = true
     thumbDragging.value = true
-    gesture.element.setPointerCapture(event.pointerId)
+    if (gesture.input === 'pointer') {
+      gesture.element.setPointerCapture(event.pointerId)
+    }
   }
 
   if (event.cancelable) {
@@ -167,7 +276,8 @@ function moveThumbDrag(event) {
 
 function finishThumbDrag(event) {
   const gesture = thumbGesture
-  if (!gesture || (event && gesture.pointerId !== event.pointerId)) {
+  if (!gesture || (event && (gesture.input !== 'pointer' ||
+    event.pointerType === 'touch' || gesture.pointerId !== event.pointerId))) {
     return
   }
 
@@ -180,8 +290,44 @@ function finishThumbDrag(event) {
   suppressThumbClick = gesture.dragging
   thumbDragging.value = false
   thumbDragOffset.value = 0
-  if (gesture.element.hasPointerCapture(gesture.pointerId)) {
+  if (gesture.input === 'pointer' && gesture.element.hasPointerCapture(gesture.pointerId)) {
     gesture.element.releasePointerCapture(gesture.pointerId)
+  }
+}
+
+function startThumbTouch(event) {
+  if (event.touches.length !== 1) {
+    finishThumbDrag()
+    return
+  }
+  if (thumbGesture) {
+    return
+  }
+  const touch = event.changedTouches[0]
+  if (touch) {
+    createThumbGesture(event.currentTarget, touch.identifier, touch.clientX, touch.clientY, 'touch')
+  }
+}
+
+function moveThumbTouch(event) {
+  const gesture = thumbGesture
+  if (!gesture || gesture.input !== 'touch') {
+    return
+  }
+  if (event.touches.length !== 1) {
+    finishThumbDrag()
+    return
+  }
+  const touch = Array.from(event.touches).find(item => item.identifier === gesture.pointerId)
+  if (touch) {
+    updateThumbGesture(gesture, touch.clientX, touch.clientY, event)
+  }
+}
+
+function finishThumbTouch(event) {
+  if (thumbGesture?.input === 'touch' &&
+    Array.from(event.changedTouches).some(item => item.identifier === thumbGesture.pointerId)) {
+    finishThumbDrag()
   }
 }
 
@@ -401,6 +547,10 @@ function scrollToTop() {
           @pointerup="finishHeroDrag"
           @pointercancel="finishHeroDrag"
           @lostpointercapture="finishHeroDrag"
+          @touchstart="startHeroTouch"
+          @touchmove="moveHeroTouch"
+          @touchend="finishHeroTouch"
+          @touchcancel="finishHeroTouch"
         >
           <div
             class="hero-image-track"
@@ -430,6 +580,10 @@ function scrollToTop() {
             @pointerup="finishThumbDrag"
             @pointercancel="finishThumbDrag"
             @lostpointercapture="finishThumbDrag"
+            @touchstart="startThumbTouch"
+            @touchmove="moveThumbTouch"
+            @touchend="finishThumbTouch"
+            @touchcancel="finishThumbTouch"
             @click.capture="guardThumbClick"
           >
             <div
