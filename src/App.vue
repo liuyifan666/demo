@@ -16,62 +16,95 @@ const activeTab = ref('recommend')
 const galleryCollapsed = ref(false)
 const headerPinned = ref(false)
 const thumbStripRef = ref(null)
+const thumbTrackRef = ref(null)
 const thumbDragOffset = ref(0)
-const thumbReleasing = ref(false)
-let thumbTouchStartX = 0
-let thumbTouchStartScrollLeft = 0
-let thumbReleaseTimer
+const thumbDragging = ref(false)
+let thumbGesture = null
+let suppressThumbClick = false
 
 function updateHeaderPinned() {
   headerPinned.value = window.scrollY > 0
 }
 
-function startThumbTouch(event) {
+function startThumbDrag(event) {
   const strip = thumbStripRef.value
-  if (galleryCollapsed.value || !strip) {
+  const track = thumbTrackRef.value
+  if (!event.isPrimary || event.button !== 0 || thumbGesture) {
     return
   }
 
-  thumbTouchStartX = event.touches[0]?.clientX ?? 0
-  thumbTouchStartScrollLeft = strip.scrollLeft
+  suppressThumbClick = false
+  if (galleryCollapsed.value || !strip || !track) {
+    return
+  }
+
+  const style = window.getComputedStyle(strip)
+  const padding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)
+  thumbGesture = {
+    pointerId: event.pointerId,
+    element: strip,
+    startX: event.clientX,
+    startY: event.clientY,
+    scrollLeft: strip.scrollLeft,
+    maxScrollLeft: Math.max(0, track.offsetWidth + padding - strip.clientWidth),
+    dragging: false,
+  }
+}
+
+function moveThumbDrag(event) {
+  const gesture = thumbGesture
+  if (!gesture || gesture.pointerId !== event.pointerId) {
+    return
+  }
+
+  const deltaX = event.clientX - gesture.startX
+  const deltaY = event.clientY - gesture.startY
+  if (!gesture.dragging) {
+    if (Math.max(Math.abs(deltaX), Math.abs(deltaY)) < 6) {
+      return
+    }
+    if (Math.abs(deltaY) > Math.abs(deltaX)) {
+      thumbGesture = null
+      return
+    }
+    gesture.dragging = true
+    thumbDragging.value = true
+    gesture.element.setPointerCapture(event.pointerId)
+  }
+
+  if (event.cancelable) {
+    event.preventDefault()
+  }
+
+  // Keep the scroll range stable while the inner track is stretched.
+  const proposed = gesture.scrollLeft - deltaX
+  const clamped = Math.max(0, Math.min(gesture.maxScrollLeft, proposed))
+  gesture.element.scrollLeft = clamped
+  const overscroll = clamped - proposed
+  thumbDragOffset.value = Math.sign(overscroll) * 48 * (1 - Math.exp(-Math.abs(overscroll) / 100))
+}
+
+function finishThumbDrag(event) {
+  const gesture = thumbGesture
+  if (!gesture || (event && gesture.pointerId !== event.pointerId)) {
+    return
+  }
+
+  thumbGesture = null
+  suppressThumbClick = gesture.dragging
+  thumbDragging.value = false
   thumbDragOffset.value = 0
-  thumbReleasing.value = false
-  window.clearTimeout(thumbReleaseTimer)
-}
-
-function moveThumbTouch(event) {
-  const strip = thumbStripRef.value
-  const currentX = event.touches[0]?.clientX
-  if (galleryCollapsed.value || !strip || currentX === undefined) {
-    return
-  }
-
-  const deltaX = currentX - thumbTouchStartX
-  const maxScrollLeft = Math.max(0, strip.scrollWidth - strip.clientWidth)
-  const proposedScrollLeft = thumbTouchStartScrollLeft - deltaX
-
-  if (proposedScrollLeft < 0) {
-    thumbDragOffset.value = Math.min(48, -proposedScrollLeft * 0.38)
-  } else if (proposedScrollLeft > maxScrollLeft) {
-    thumbDragOffset.value = -Math.min(48, (proposedScrollLeft - maxScrollLeft) * 0.38)
-  } else {
-    thumbDragOffset.value = 0
+  if (gesture.element.hasPointerCapture(gesture.pointerId)) {
+    gesture.element.releasePointerCapture(gesture.pointerId)
   }
 }
 
-function finishThumbTouch() {
-  if (thumbDragOffset.value === 0) {
-    return
+function guardThumbClick(event) {
+  if (suppressThumbClick && event.detail !== 0) {
+    event.preventDefault()
+    event.stopPropagation()
+    suppressThumbClick = false
   }
-
-  thumbReleasing.value = true
-  window.requestAnimationFrame(() => {
-    thumbDragOffset.value = 0
-  })
-  window.clearTimeout(thumbReleaseTimer)
-  thumbReleaseTimer = window.setTimeout(() => {
-    thumbReleasing.value = false
-  }, 280)
 }
 
 onMounted(() => {
@@ -81,7 +114,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('scroll', updateHeaderPinned)
-  window.clearTimeout(thumbReleaseTimer)
+  finishThumbDrag()
 })
 
 const prices = ref([
@@ -194,6 +227,7 @@ function selectImage(index) {
 }
 
 function toggleGallery() {
+  finishThumbDrag()
   galleryCollapsed.value = !galleryCollapsed.value
 }
 
@@ -270,28 +304,35 @@ function scrollToTop() {
           <div
             ref="thumbStripRef"
             class="thumb-strip"
-            :class="{ 'is-releasing': thumbReleasing }"
-            :style="{ transform: `translateX(${thumbDragOffset}px)` }"
-            @touchstart="startThumbTouch"
-            @touchmove="moveThumbTouch"
-            @touchend="finishThumbTouch"
-            @touchcancel="finishThumbTouch"
+            @pointerdown="startThumbDrag"
+            @pointermove="moveThumbDrag"
+            @pointerup="finishThumbDrag"
+            @pointercancel="finishThumbDrag"
+            @lostpointercapture="finishThumbDrag"
+            @click.capture="guardThumbClick"
           >
-            <button
-              v-for="(image, index) in gallery"
-              :key="image.src"
-              class="thumb"
-              :class="{ active: activeImageIndex === index }"
-              :tabindex="galleryCollapsed && activeImageIndex !== index ? -1 : 0"
-              :aria-hidden="galleryCollapsed && activeImageIndex !== index"
-              type="button"
-              @click="selectImage(index)"
+            <div
+              ref="thumbTrackRef"
+              class="thumb-track"
+              :class="{ 'is-dragging': thumbDragging }"
+              :style="{ transform: `translateX(${thumbDragOffset}px)` }"
             >
-              <img :src="image.src" :alt="image.label" />
-              <span v-if="index === 0" class="thumb-play" aria-hidden="true">
-                <img class="thumb-play-icon" :src="asset('assets/icons/play2.svg')" alt="" />
-              </span>
-            </button>
+              <button
+                v-for="(image, index) in gallery"
+                :key="image.src"
+                class="thumb"
+                :class="{ active: activeImageIndex === index }"
+                :tabindex="galleryCollapsed && activeImageIndex !== index ? -1 : 0"
+                :aria-hidden="galleryCollapsed && activeImageIndex !== index"
+                type="button"
+                @click="selectImage(index)"
+              >
+                <img :src="image.src" :alt="image.label" draggable="false" />
+                <span v-if="index === 0" class="thumb-play" aria-hidden="true">
+                  <img class="thumb-play-icon" :src="asset('assets/icons/play2.svg')" alt="" draggable="false" />
+                </span>
+              </button>
+            </div>
           </div>
           <el-button
             circle

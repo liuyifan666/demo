@@ -293,6 +293,10 @@ button {
   overflow-x: hidden;
 }
 
+.gallery-controls.is-collapsed .thumb-track {
+  gap: 0;
+}
+
 .gallery-controls.is-collapsed .thumb {
   flex-basis: 0;
   width: 0;
@@ -321,6 +325,7 @@ button {
 
 .thumb-strip {
   display: flex;
+  width: 136px;
   min-width: 0;
   max-width: 136px;
   align-items: center;
@@ -332,7 +337,7 @@ button {
   opacity: 1;
   overscroll-behavior-x: contain;
   scrollbar-width: none;
-  touch-action: pan-x;
+  touch-action: pan-y pinch-zoom;
   transition:
     max-width 280ms cubic-bezier(0.22, 1, 0.36, 1),
     padding 280ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -344,8 +349,28 @@ button {
   display: none;
 }
 
-.thumb-strip.is-releasing {
-  transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+.thumb-track {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+  will-change: transform;
+  transition:
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    gap 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.thumb-track.is-dragging {
+  transition: gap 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.thumb-strip:has(.is-dragging) {
+  cursor: grabbing;
+}
+
+.thumb-track img {
+  pointer-events: none;
 }
 
 .thumb {
