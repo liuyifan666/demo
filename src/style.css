@@ -594,8 +594,19 @@ h2 {
 }
 
 .coupon-strong {
+  display: inline-flex;
   width: 43px;
+  min-width: 43px;
   height: 20px;
+  flex: 0 0 43px;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.activity-text > span:last-child {
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .price-card {
