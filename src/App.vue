@@ -9,6 +9,7 @@ const gallery = [
   { src: asset('assets/figma-01.png'), label: '包装' },
   { src: asset('assets/figma-04.png'), label: '包装侧面' },
   { src: asset('assets/figma-11.png'), label: '食材' },
+  { src: asset('assets/figma-09.png'), label: '肉类' },
 ]
 const isFlag = ref(true)
 const activeImageIndex = ref(0)
