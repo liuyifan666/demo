@@ -75,6 +75,21 @@ button {
   object-fit: cover;
 }
 
+.page-header {
+  position: fixed;
+  z-index: 20;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 104px;
+  background-color: transparent;
+  transition: background-color 180ms ease;
+}
+
+.page-header.is-pinned {
+  background-color: #fff;
+}
+
 .status-bar-image {
   position: absolute;
   top: 11px;
@@ -1215,6 +1230,13 @@ h2 {
   .phone-page {
     width: 375px;
     box-shadow: 0 16px 48px rgba(37, 41, 51, 0.12);
+  }
+
+  .page-header {
+    width: 375px;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
   }
 
   .bottom-action {

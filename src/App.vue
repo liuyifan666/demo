@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 
 const asset = path => `${import.meta.env.BASE_URL}${path}`
@@ -14,6 +14,20 @@ const isFlag = ref(true)
 const activeImageIndex = ref(0)
 const activeTab = ref('recommend')
 const galleryCollapsed = ref(false)
+const headerPinned = ref(false)
+
+function updateHeaderPinned() {
+  headerPinned.value = window.scrollY > 0
+}
+
+onMounted(() => {
+  updateHeaderPinned()
+  window.addEventListener('scroll', updateHeaderPinned, { passive: true })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', updateHeaderPinned)
+})
 
 const prices = ref([
   {
@@ -156,19 +170,7 @@ function scrollToTop() {
 <template>
   <div class="app-stage">
     <main class="phone-page">
-      <section class="hero-media">
-        <div
-          class="hero-image-track"
-          :style="{ transform: `translateX(-${activeImageIndex * 100}%)` }"
-        >
-          <img
-            v-for="image in gallery"
-            :key="image.src"
-            class="hero-image"
-            :src="image.src"
-            :alt="image.label"
-          />
-        </div>
+      <header class="page-header" :class="{ 'is-pinned': headerPinned }">
         <img class="status-bar-image" :src="asset('assets/figma-17.png')" alt="" aria-hidden="true" />
         <div class="media-tools">
           <div class="media-nav-pill">
@@ -190,6 +192,20 @@ function scrollToTop() {
               <img class="lens-icon" :src="asset('assets/icons/close.svg')" alt="" aria-hidden="true" />
             </button>
           </div>
+        </div>
+      </header>
+      <section class="hero-media">
+        <div
+          class="hero-image-track"
+          :style="{ transform: `translateX(-${activeImageIndex * 100}%)` }"
+        >
+          <img
+            v-for="image in gallery"
+            :key="image.src"
+            class="hero-image"
+            :src="image.src"
+            :alt="image.label"
+          />
         </div>
         <div class="play-button" v-show="isFlag">
           <img class="main-play-icon" :src="asset('assets/icons/play.svg')" alt="" aria-hidden="true" />
