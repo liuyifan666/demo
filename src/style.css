@@ -889,7 +889,7 @@ h2 {
 
 .mini-label:last-child {
   min-width: 0;
-  overflow: hidden;
+  /* overflow: hidden; */
   flex: 0 1 auto;
 }
 
